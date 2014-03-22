@@ -1,5 +1,3 @@
-import os
-
 import config
 import formats
 

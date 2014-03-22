@@ -31,7 +31,7 @@ def main(oversegmenter, to_plot=False, lim=0):
             bm_3d = bm_3d[:lim]
         labels_3d, n_labels = module.oversegment_bm(bm_3d)
     elif hasattr(module, 'oversegment_aff'):
-        aff_3d = formats.read_aff(config.fn_aff)
+        aff_3d = formats.read_aff(config.fn_aff, config.shape_aff)
         if lim:
             aff_3d = aff_3d[:lim]
         labels_3d, n_labels = module.oversegment_aff(aff_3d)
