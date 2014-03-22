@@ -1,3 +1,8 @@
+"""
+Take a tiff file containing oversegmented regions, and produce/save pairs of
+neighboring regions with internal pixels containing their original boundary
+map values, and external pixels masked out.
+"""
 import argparse
 import Image
 import numpy as np

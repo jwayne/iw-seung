@@ -1,17 +1,16 @@
+"""
+Take 2D slices one at a time, and segment each using standard watershed
+with local mins as seeds.
+"""
 import logging
 import numpy as np
 from scipy import ndimage
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
-import sys
 
 
 
-def oversegment_slice(slice_bm):
-    """
-    Takes a single 2D grayscale slice, and segments it using watershed
-    with local mins as markers.
-    """
+def _oversegment_slice(slice_bm):
     # Find local max's to use as markers for where to start watershed
     slice_localmax = peak_local_max(slice_bm, indices=False)
     slice_markers, n_markers = ndimage.label(slice_localmax)
@@ -33,11 +32,11 @@ def oversegment_slice(slice_bm):
     return slice_labels, n_markers
 
 
-def oversegment(stack_bm):
+def oversegment_bm(stack_bm):
     stack_labels = np.zeros(stack_bm.shape)
     tot_labels = 0
     for i, slice_bm in enumerate(stack_bm):
-        slice_labels, n_labels = oversegment_slice(slice_bm)
+        slice_labels, n_labels = _oversegment_slice(slice_bm)
         # Adjust label values since regions technically don't share labels across slices.
 #        slice_labels += tot_labels
         stack_labels[i,:,:] = slice_labels
