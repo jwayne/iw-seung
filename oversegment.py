@@ -42,6 +42,14 @@ def main(oversegmenter, to_plot=False, lim=0, infile=None):
         aff_3d = formats.read_aff(fn)
         if lim:
             aff_3d = aff_3d[:lim]
+            # Need edges going out-of-bounds to be 0, to prevent the exploring
+            # of out-of-bounds vertices
+            aff_3d[-1, :, :, 0] = 0
+            aff_3d[:, -1, :, 1] = 0
+            aff_3d[:, :, -1, 2] = 0
+            aff_3d[0, :, :, 3] = 0
+            aff_3d[:, 0, :, 4] = 0
+            aff_3d[:, :, 0, 5] = 0
         labels_3d, n_labels = module.oversegment_aff(aff_3d)
     else:
         raise ImportError("Bad module: '%s'" % module.__name__)
