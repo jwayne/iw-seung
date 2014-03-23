@@ -1,16 +1,16 @@
 """
 bm:
-    3d numpy array [z][x][y] of probability(boundary)
+    3d numpy array [z][y][x] of probability(boundary)
     * elements = 0-255, 1 byte each
     * values = [0, 1=boundary]
 aff:
-    3d numpy array [z][x][y][3] of edge affinities offset so that
-    aff_3d[z][x][y][0,1,2] corresponds to the edge in the +z, +x, +y
-    directions of (z,x,y), respectively.
+    3d numpy array [z][y][x][6] of edge affinities offset so that
+    aff_3d[z][y][x][0,1,2,3,4,5] corresponds to the edge in the
+    +z, +y, +x, -z, -y, -x directions of (z,y,x), respectively.
     * elements = 0-255, 1 byte each
     * values = [0, 1=connected]
 labels:
-    3d numpy array [z][x][y] of integer labels
+    3d numpy array [z][y][x] of integer labels
     * elements = unsigned int, 2 bytes each
     * values = [1, 2, ..]
 """
@@ -30,6 +30,13 @@ def read_bm(fn):
     bm_3d = tifffile.imread(fn)
     logging.info("Read bm: '%s'" % fn)
     return bm_3d
+
+def save_bm(fn, bm_3d):
+    if os.path.exists(fn):
+        raise IOError("File already exists, will not overwrite: %s" % fn)
+    bm_3d = BM_DTYPE(bm_3d)
+    tifffile.imsave(fn, bm_3d, photometric='minisblack')
+    logging.info("Wrote bm: '%s'" % fn)
 
 
 ##########
@@ -62,7 +69,7 @@ def save_aff(fn, aff_3d):
 def save_aff_tiff(fn, aff_3d, dim=1):
     """
     Saves affinities going in a single direction to a tiff for easier viewing.
-    dim: 0=z, 1=x, 2=y, 3=affv
+    dim: 0=z, 1=y, 2=x, 3=affv
     """
     if dim < 3:
         aff_3d_f = aff_3d[:, :, :, dim]
@@ -73,8 +80,8 @@ def save_aff_tiff(fn, aff_3d, dim=1):
     logging.info("Wrote aff tiff: '%s'" % fn)
 
 def bm2aff(bm_3d):
-    zsize, xsize, ysize = bm_3d.shape
-    aff_3d = np.zeros((zsize, xsize, ysize, 6), dtype=AFF_DTYPE)
+    zsize, ysize, xsize = bm_3d.shape
+    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=AFF_DTYPE)
     aff_3d[:-1, :, :, 0] = AFF_MAX - np.abs(bm_3d[1:, :, :] - bm_3d[:-1, :, :])
     aff_3d[:, :-1, :, 1] = AFF_MAX - np.abs(bm_3d[:, 1:, :] - bm_3d[:, :-1, :])
     aff_3d[:, :, :-1, 2] = AFF_MAX - np.abs(bm_3d[:, :, 1:] - bm_3d[:, :, :-1])
