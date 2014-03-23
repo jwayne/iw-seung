@@ -52,9 +52,7 @@ def read_aff(fn, shape):
     logging.info("Read aff: '%s'" % fn)
     aff_3d = np.zeros(shape + (6,), dtype=AFF_DTYPE)
     aff_3d[:, :, :, 0:3] = aff_3d_f
-    aff_3d[1:, :, :, 3] = aff_3d_f[:-1, :, :, 0]
-    aff_3d[:, 1:, :, 4] = aff_3d_f[:, :-1, :, 1]
-    aff_3d[:, :, 1:, 5] = aff_3d_f[:, :, :-1, 2]
+    refresh_aff(aff_3d)
     return aff_3d
 
 def save_aff(fn, aff_3d):
@@ -79,15 +77,18 @@ def save_aff_tiff(fn, aff_3d, dim=1):
     tifffile.imsave(fn, aff_3d_f, photometric='minisblack')
     logging.info("Wrote aff tiff: '%s'" % fn)
 
+def refresh_aff(aff_3d):
+    aff_3d[1:, :, :, 3] = aff_3d[:-1, :, :, 0]
+    aff_3d[:, 1:, :, 4] = aff_3d[:, :-1, :, 1]
+    aff_3d[:, :, 1:, 5] = aff_3d[:, :, :-1, 2]
+
 def bm2aff(bm_3d):
     zsize, ysize, xsize = bm_3d.shape
     aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=AFF_DTYPE)
     aff_3d[:-1, :, :, 0] = AFF_MAX - np.abs(bm_3d[1:, :, :] - bm_3d[:-1, :, :])
     aff_3d[:, :-1, :, 1] = AFF_MAX - np.abs(bm_3d[:, 1:, :] - bm_3d[:, :-1, :])
     aff_3d[:, :, :-1, 2] = AFF_MAX - np.abs(bm_3d[:, :, 1:] - bm_3d[:, :, :-1])
-    aff_3d[1:, :, :, 3] = aff_3d[:-1, :, :, 0]
-    aff_3d[:, 1:, :, 4] = aff_3d[:, :-1, :, 1]
-    aff_3d[:, :, 1:, 5] = aff_3d[:, :, :-1, 2]
+    refresh_aff(aff_3d)
     return aff_3d
 
 def aff2affv(aff_3d):
