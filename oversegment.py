@@ -21,17 +21,25 @@ def plot_arr(arr, cmap):
 
 
 
-def main(oversegmenter, to_plot=False, lim=0):
+def main(oversegmenter, to_plot=False, lim=0, infile=None):
 
     module = importer.get_module('oversegmenters', oversegmenter)
 
     if hasattr(module, 'oversegment_bm'):
-        bm_3d = formats.read_bm(config.fn_bm)
+        if infile:
+            fn = infile
+        else:
+            fn = config.fn_bm
+        bm_3d = formats.read_bm(fn)
         if lim:
             bm_3d = bm_3d[:lim]
         labels_3d, n_labels = module.oversegment_bm(bm_3d)
     elif hasattr(module, 'oversegment_aff'):
-        aff_3d = formats.read_aff(config.fn_aff, config.shape_aff)
+        if infile:
+            fn = infile
+        else:
+            fn = config.fn_aff
+        aff_3d = formats.read_aff(fn)
         if lim:
             aff_3d = aff_3d[:lim]
         labels_3d, n_labels = module.oversegment_aff(aff_3d)
@@ -53,10 +61,12 @@ def main(oversegmenter, to_plot=False, lim=0):
 if __name__ == "__main__":
     parser = jargparse.ArgumentParser()
     parser.add_argument('oversegmenter')
+    parser.add_argument('--infile',
+        help="image file to segment, if not supplied then file in config.py will be used")
     parser.add_argument('--lim', type=int, default=0,
         help="max slices to oversegment")
     parser.add_argument('--plot', action='store_true',
         help="plot oversegmented labels for each slice")
     args = parser.parse_args()
 
-    main(args.oversegmenter, args.plot, args.lim)
+    main(args.oversegmenter, args.plot, args.lim, args.infile)

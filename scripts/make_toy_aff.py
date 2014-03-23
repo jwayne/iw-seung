@@ -3,7 +3,8 @@ import formats
 import numpy as np
 import sys
 
-fn = sys.argv[1]
+out_fn = sys.argv[1]
+
 aff_3d = np.zeros((1,4,4,6), dtype=np.uint8)
 # Only need to instantiate first 3 edges, since the rest is discarded during saving
 # vertical edges

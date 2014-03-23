@@ -90,7 +90,6 @@ def watershed(aff, affv, labels, threshold, n_labels):
 
 
 def oversegment_aff(aff_3d):
-    aff_3d = aff_3d[:5,:100,:100]
     zsize, ysize, xsize, nedges = aff_3d.shape
     assert nedges == 6
     # Normally, we won't be exploring out-of-bounds vertices because
@@ -109,13 +108,16 @@ def oversegment_aff(aff_3d):
     affv_3d = formats.aff2affv(aff_3d)
 
     n_labels = 0
-    n_labels = watershed(aff_3d, affv_3d, labels_3d, 0.8, n_labels)
-    """
-    for t_cc, t_ws in ((.9,.8), (.8,.7), (.7,.6), (.6,.5)):
-        t_cc *= 255
-        t_ws *= 255
+#    n_labels = watershed(aff_3d, affv_3d, labels_3d, 1, n_labels)
+    for t_cc, t_ws in ((.9,.8), (.8,.7), (.7,.6), (.6,.2)):
+        t_cc *= formats.AFF_MAX
+        t_ws *= formats.AFF_MAX
         n_labels = connected_components(aff_3d, affv_3d, labels_3d, t_cc, n_labels)
+        print n_labels
+        # We are allowed to do this because all minima are labeled due to
+        # the previous function.
         n_labels = watershed(aff_3d, affv_3d, labels_3d, t_ws, n_labels)
-    """
+        print n_labels
+
 
     return labels_3d, n_labels

@@ -27,16 +27,19 @@ import tifffile
 BM_DTYPE = np.uint8
 
 def read_bm(fn):
+    logging.info("Reading bm: '%s'" % fn)
     bm_3d = tifffile.imread(fn)
-    logging.info("Read bm: '%s'" % fn)
+    # To handle single-page tiffs
+    if len(bm_3d.shape) < 3:
+        bm_3d = bm_3d.reshape((1,) + bm_3d.shape)
     return bm_3d
 
 def save_bm(fn, bm_3d):
+    logging.info("Writing bm: '%s'" % fn)
     if os.path.exists(fn):
         raise IOError("File already exists, will not overwrite: %s" % fn)
     bm_3d = BM_DTYPE(bm_3d)
     tifffile.imsave(fn, bm_3d, photometric='minisblack')
-    logging.info("Wrote bm: '%s'" % fn)
 
 
 ##########
@@ -46,36 +49,40 @@ def save_bm(fn, bm_3d):
 AFF_DTYPE = np.uint8
 AFF_MAX = 255
 
-def read_aff(fn, shape):
-    aff_3d_f = np.fromfile(fn, dtype=AFF_DTYPE)
-    aff_3d_f = aff_3d_f.reshape(shape + (3,))
-    logging.info("Read aff: '%s'" % fn)
-    aff_3d = np.zeros(shape + (6,), dtype=AFF_DTYPE)
+def read_aff(fn):
+    logging.info("Reading aff: '%s'" % fn)
+    with open(fn, 'rb') as f:
+        zsize, ysize, xsize, _ = np.fromfile(f, dtype=np.uint16, count=4)
+        aff_3d_f = np.fromfile(f, dtype=AFF_DTYPE)
+    aff_3d_f = aff_3d_f.reshape((zsize, ysize, xsize, 3))
+    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=AFF_DTYPE)
     aff_3d[:, :, :, 0:3] = aff_3d_f
     refresh_aff(aff_3d)
     return aff_3d
 
 def save_aff(fn, aff_3d):
+    logging.info("Writing aff: '%s'" % fn)
     if os.path.exists(fn):
         raise IOError("File already exists, will not overwrite: %s" % fn)
     aff_3d_f = aff_3d[:, :, :, :3]
     aff_3d_f = AFF_DTYPE(aff_3d_f)
-    with open(fn, 'w') as f:
+    with open(fn, 'wb') as f:
+        shape = np.uint16(aff_3d_f.shape)
+        shape.tofile(f)
         aff_3d_f.tofile(f)
-    logging.info("Wrote aff: '%s'" % fn)
 
 def save_aff_tiff(fn, aff_3d, dim=1):
     """
     Saves affinities going in a single direction to a tiff for easier viewing.
     dim: 0=z, 1=y, 2=x, 3=affv
     """
+    logging.info("Writing aff tiff: '%s'" % fn)
     if dim < 3:
         aff_3d_f = aff_3d[:, :, :, dim]
     else:
         aff_3d_f = aff2affv(aff_3d)
     aff_3d_f = AFF_DTYPE(aff_3d_f)
     tifffile.imsave(fn, aff_3d_f, photometric='minisblack')
-    logging.info("Wrote aff tiff: '%s'" % fn)
 
 def refresh_aff(aff_3d):
     aff_3d[1:, :, :, 3] = aff_3d[:-1, :, :, 0]
@@ -85,9 +92,13 @@ def refresh_aff(aff_3d):
 def bm2aff(bm_3d):
     zsize, ysize, xsize = bm_3d.shape
     aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=AFF_DTYPE)
-    aff_3d[:-1, :, :, 0] = AFF_MAX - np.abs(bm_3d[1:, :, :] - bm_3d[:-1, :, :])
-    aff_3d[:, :-1, :, 1] = AFF_MAX - np.abs(bm_3d[:, 1:, :] - bm_3d[:, :-1, :])
-    aff_3d[:, :, :-1, 2] = AFF_MAX - np.abs(bm_3d[:, :, 1:] - bm_3d[:, :, :-1])
+    # TODO: max or diff?
+    aff_3d[:-1, :, :, 0] = np.max((bm_3d[1:, :, :], bm_3d[:-1, :, :]), 0)
+    aff_3d[:, :-1, :, 1] = np.max((bm_3d[:, 1:, :], bm_3d[:, :-1, :]), 0)
+    aff_3d[:, :, :-1, 2] = np.max((bm_3d[:, :, 1:], bm_3d[:, :, :-1]), 0)
+#    aff_3d[:-1, :, :, 0] = AFF_MAX - np.abs(bm_3d[1:, :, :] - bm_3d[:-1, :, :])
+#    aff_3d[:, :-1, :, 1] = AFF_MAX - np.abs(bm_3d[:, 1:, :] - bm_3d[:, :-1, :])
+#    aff_3d[:, :, :-1, 2] = AFF_MAX - np.abs(bm_3d[:, :, 1:] - bm_3d[:, :, :-1])
     refresh_aff(aff_3d)
     return aff_3d
 
@@ -111,13 +122,13 @@ AFF_INDEX_MAP = (
 LABELS_DTYPE = np.uint16
 
 def read_labels(fn):
+    logging.info("Reading labels: '%s'" % fn)
     labels_3d = tifffile.imread(fn)
-    logging.info("Read labels: '%s'" % fn)
     return labels_3d
 
 def save_labels(fn, labels_3d):
+    logging.info("Writing labels: '%s'" % fn)
     if os.path.exists(fn):
         raise IOError("File already exists, will not overwrite: %s" % fn)
     labels_3d = LABELS_DTYPE(labels_3d)
     tifffile.imsave(fn, labels_3d, photometric='minisblack')
-    logging.info("Wrote labels: '%s'" % fn)
