@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import division
 from jpyutils import importer, io, jargparse
 import matplotlib.pyplot as plt
@@ -5,7 +6,7 @@ import numpy as np
 import os
 
 import config
-import formats
+from structs import formats
 
 
 
@@ -21,8 +22,7 @@ def plot_arr(arr, cmap):
 
 
 
-def main(oversegmenter, to_plot=False, lim=0, infile=None):
-
+def oversegment(oversegmenter, to_plot=False, lim=0, infile=None):
     module = importer.get_module('oversegmenters', oversegmenter)
 
     if hasattr(module, 'oversegment_bm'):
@@ -65,8 +65,7 @@ def main(oversegmenter, to_plot=False, lim=0, infile=None):
     formats.save_labels(fn, labels_3d)
 
 
-
-if __name__ == "__main__":
+def main():
     parser = jargparse.ArgumentParser()
     parser.add_argument('oversegmenter')
     parser.add_argument('--infile',
@@ -77,4 +76,8 @@ if __name__ == "__main__":
         help="plot oversegmented labels for each slice")
     args = parser.parse_args()
 
-    main(args.oversegmenter, args.plot, args.lim, args.infile)
+    oversegment(args.oversegmenter, args.plot, args.lim, args.infile)
+
+
+if __name__ == "__main__":
+    args = main()

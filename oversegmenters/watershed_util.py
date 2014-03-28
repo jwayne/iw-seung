@@ -9,7 +9,8 @@ from jpyutils.timeit import timeit
 from jpyutils.unionfind import UnionFind
 import logging
 import numpy as np
-import formats
+
+from structs import formats
 
 
 @timeit

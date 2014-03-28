@@ -11,7 +11,8 @@ http://dspace.mit.edu/handle/1721.1/66820
 """
 from collections import defaultdict
 import numpy as np
-import formats
+
+from structs import formats
 from oversegmenters.watershed_util import connected_components, watershed, get_region_graph, merge_segments
 
 #TODO: parallelizing? how does my discretizing of the affinity graph (i.e., the
