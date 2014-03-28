@@ -12,7 +12,8 @@ Bogovic, Huang, Jain 2013 - Learned vs Hand-Designed Feature Representations
 for 3d Agglomeration
 """
 import numpy as np
-import formats
+
+from structs import formats
 from oversegmenters.watershed_util import connected_components, watershed
 
 
@@ -28,7 +29,7 @@ def oversegment_aff(aff_3d):
     n_labels = 0
 
 #    n_labels = watershed(aff_3d, affv_3d, labels_3d, 1, n_labels)
-    for t_cc, t_ws in ((.9,.8), (.8,.7), (.7,.6), (.6,.2)):
+    for t_cc, t_ws in ((.9,.8),):# (.8,.7), (.7,.6), (.6,.2)):
         t_cc *= formats.AFF_MAX
         t_ws *= formats.AFF_MAX
         n_labels = connected_components(aff_3d, affv_3d, t_cc, labels_3d, n_labels)

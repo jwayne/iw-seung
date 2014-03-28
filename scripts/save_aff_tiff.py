@@ -1,6 +1,7 @@
-import config, formats
 from jpyutils.jlogging import logging_setup
 import sys
+import config
+from structs import formats
 
 logging_setup('debug')
 

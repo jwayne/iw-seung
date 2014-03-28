@@ -1,7 +1,8 @@
 # figure 4 in cousty 2009
-import formats
 import numpy as np
 import sys
+from structs import formats
+
 
 out_fn = sys.argv[1]
 

@@ -1,7 +1,7 @@
-import formats
 import numpy as np
 import unittest
 from unittest import TestCase
+from structs import formats
 
 
 class TestAff(TestCase):

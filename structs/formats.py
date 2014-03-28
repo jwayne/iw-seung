@@ -18,13 +18,12 @@ import logging
 import numpy as np
 import os
 import tifffile
+from dtypes import BM_DTYPE, AFF_DTYPE, LABELS_DTYPE, AFF_MAX, AFF_INDEX_MAP
 
 
 ##########
 # bm
 ##########
-
-BM_DTYPE = np.uint8
 
 def read_bm(fn):
     logging.info("Reading bm: '%s'" % fn)
@@ -45,9 +44,7 @@ def save_bm(fn, bm_3d):
 ##########
 # aff
 ##########
-
-AFF_DTYPE = np.uint8
-AFF_MAX = 255
+#TODO: use size 3, instead of size 6, in last dimension
 
 def read_aff(fn):
     logging.info("Reading aff: '%s'" % fn)
@@ -105,21 +102,10 @@ def bm2aff(bm_3d):
 def aff2affv(aff_3d):
     return np.amax(aff_3d, axis=3)
 
-AFF_INDEX_MAP = (
-    (1,0,0),
-    (0,1,0),
-    (0,0,1),
-    (-1,0,0),
-    (0,-1,0),
-    (0,0,-1),
-)
-
 
 ##########
 # labels
 ##########
-
-LABELS_DTYPE = np.uint16
 
 def read_labels(fn):
     logging.info("Reading labels: '%s'" % fn)
