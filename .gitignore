@@ -39,3 +39,5 @@ nosetests.xml
 *.swo
 *.log
 *.prof
+
+.use_cython

@@ -48,7 +48,7 @@ def connected_components(aff, affv, T_h, labels, n_labels=0, sizes=None):
                         z, y, x = q.pop()
                         # Only need to check 3 directions since otherwise each edge
                         # would be checked twice.
-                        for i in xrange(3):
+                        for i in xrange(6):
                             if aff[z,y,x,i] >= T_h:
                                 # Check if unlabeled
                                 z1 = z + formats.AFF_INDEX_MAP[i][0]

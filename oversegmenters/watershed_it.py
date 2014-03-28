@@ -28,8 +28,7 @@ def oversegment_aff(aff_3d):
     labels_3d = np.zeros(aff_3d.shape[:-1], dtype=formats.LABELS_DTYPE)
     n_labels = 0
 
-#    n_labels = watershed(aff_3d, affv_3d, labels_3d, 1, n_labels)
-    for t_cc, t_ws in ((.9,.8),):# (.8,.7), (.7,.6), (.6,.2)):
+    for t_cc, t_ws in ((.9,.8), (.8,.7), (.7,.6), (.6,.2)):
         t_cc *= formats.AFF_MAX
         t_ws *= formats.AFF_MAX
         n_labels = connected_components(aff_3d, affv_3d, t_cc, labels_3d, n_labels)

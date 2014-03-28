@@ -80,9 +80,7 @@ def connected_components(
                         qz.pop()
                         qy.pop()
                         qx.pop()
-                        # Only need to check 3 directions since otherwise each edge
-                        # would be checked twice.
-                        for i in xrange(3):
+                        for i in xrange(6):
                             if aff[z,y,x,i] >= T_h:
                                 # Check if unlabeled
                                 z1 = <unsigned int>(z + AFF_INDEX_MAP_c[i][0])
@@ -159,8 +157,6 @@ def watershed(
                         qz.pop()
                         qy.pop()
                         qx.pop()
-                        # Need to check 6 directions since otherwise certain 'under'
-                        # directions would be missed.
                         for i in xrange(6):
                             if aff[z,y,x,i] >= T_l and aff[z,y,x,i] == affv[z,y,x]:
                                 # Check if unlabeled
