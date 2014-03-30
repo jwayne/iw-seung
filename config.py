@@ -10,9 +10,9 @@ dn_data = "../data/"
 fn_bm = "train-membranes-idsia.tif"
 #fn_aff = "toy_aff.raw"
 fn_aff = "train-membranes-idsia.raw"
-fn_labels = "train-labels.tif"
+fn_truth = "train-labels.tif"
 
 dn_data = os.path.abspath(dn_data)
 fn_bm = os.path.join(dn_data, fn_bm)
 fn_aff = os.path.join(dn_data, fn_aff)
-fn_labels = os.path.join(dn_data, fn_labels)
+fn_truth = os.path.join(dn_data, fn_truth)

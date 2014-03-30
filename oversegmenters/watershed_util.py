@@ -5,8 +5,9 @@ Cousty et al. 2009 - Watershed Cuts: Minimum Spanning Forests and the Drop of
 Water Principle
 http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4564470
 """
+from collections import deque
 from jpyutils.timeit import timeit
-from jpyutils.unionfind import UnionFind
+from jpyutils.structs.unionfind import UnionFind
 import logging
 import numpy as np
 
@@ -43,11 +44,9 @@ def connected_components(aff, affv, T_h, labels, n_labels=0, sizes=None):
                     labels[z0,y0,x0] = n_labels
                     if sizes is not None:
                         sizes[n_labels] += 1
-                    q = [(z0,y0,x0)]
+                    q = deque([(z0,y0,x0)])
                     while q:
-                        z, y, x = q.pop()
-                        # Only need to check 3 directions since otherwise each edge
-                        # would be checked twice.
+                        z, y, x = q.popleft()
                         for i in xrange(6):
                             if aff[z,y,x,i] >= T_h:
                                 # Check if unlabeled
@@ -91,11 +90,11 @@ def watershed(aff, affv, T_l, labels, n_labels=0, sizes=None):
         for y0 in xrange(ysize):
             for x0 in xrange(xsize):
                 if not labels[z0,y0,x0] and affv[z0,y0,x0] >= T_l:
-                    q = [(z0,y0,x0)]
+                    q = deque([(z0,y0,x0)])
                     explored = set([(z0,y0,x0)])
                     label = 0
                     while q:
-                        z, y, x = q.pop()
+                        z, y, x = q.popleft()
                         # Need to check 6 directions since otherwise certain 'under'
                         # directions would be missed.
                         for i in xrange(6):
@@ -115,7 +114,7 @@ def watershed(aff, affv, T_l, labels, n_labels=0, sizes=None):
                                     # Found new bottom for this stream, so replace q
                                     # TODO: explore if taking max of all matches here affects result?
                                     explored.add((z1,y1,x1))
-                                    q = [(z1,y1,x1)]
+                                    q = deque([(z1,y1,x1)])
                                     break
                                 elif affv[z1,y1,x1] == affv[z,y,x]:
                                     # Found equivalent possible bottoms for this stream, so augment q
@@ -224,7 +223,8 @@ def merge_segments(region_graph, labels, n_labels, T_e, T_s, sizes):
     for z0 in xrange(zsize):
         for y0 in xrange(ysize):
             for x0 in xrange(xsize):
-                labels[z0,y0,x0] = label_map[uf.find(labels[z0,y0,x0])]
+                if labels[z0,y0,x0]:
+                    labels[z0,y0,x0] = label_map[uf.find(labels[z0,y0,x0])]
 
     # TODO: update region_graph (return?)
 

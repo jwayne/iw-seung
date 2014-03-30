@@ -17,6 +17,8 @@ from jpyutils.timeit import timeit
 from structs import formats
 include "structs/dtypes.pyx"
 
+cdef inline AFF_DTYPE_t aff_max(AFF_DTYPE_t a, AFF_DTYPE_t b): return a if a >= b else b
+
 
 #TODO: danger that n_labels overflows
 #TODO: sizes can probably be made a C/C++ object.  but might overflow
@@ -58,7 +60,7 @@ def connected_components(
     cdef unsigned int zsize = aff.shape[0]
     cdef unsigned int ysize = aff.shape[1]
     cdef unsigned int xsize = aff.shape[2]
-    cdef unsigned int z, y, x, z1, y1, x1, i
+    cdef unsigned int z, y, x, z1, y1, x1, z2, y2, x2, i
 
     cdef queue[unsigned int] qz, qy, qx
 
@@ -74,26 +76,31 @@ def connected_components(
                     qy.push(y)
                     qx.push(x)
                     while not qz.empty():
-                        z = qz.front()
-                        y = qy.front()
-                        x = qx.front()
+                        z1 = qz.front()
+                        y1 = qy.front()
+                        x1 = qx.front()
                         qz.pop()
                         qy.pop()
                         qx.pop()
+                        # Explore all neighbors.
                         for i in xrange(6):
-                            if aff[z,y,x,i] >= T_h:
-                                # Check if unlabeled
-                                z1 = <unsigned int>(z + AFF_INDEX_MAP_c[i][0])
-                                y1 = <unsigned int>(y + AFF_INDEX_MAP_c[i][1])
-                                x1 = <unsigned int>(x + AFF_INDEX_MAP_c[i][2])
-                                if not labels[z1,y1,x1]:
-                                    # Note: labels also functions as explored
-                                    labels[z1,y1,x1] = n_labels
+                            if aff[z1,y1,x1,i] >= T_h:
+                                # Note: Guaranteed not out-of-bounds thanks to T_h.
+                                z2 = <unsigned int>(z1 + AFF_INDEX_MAP_c[i][0])
+                                y2 = <unsigned int>(y1 + AFF_INDEX_MAP_c[i][1])
+                                x2 = <unsigned int>(x1 + AFF_INDEX_MAP_c[i][2])
+                                # Note: labels[] also functions as the set of
+                                # explored pixels in this bfs, so we ensure we don't
+                                # explore any pixel twice via this next check.
+                                if not labels[z2,y2,x2]:
+                                    labels[z2,y2,x2] = n_labels
                                     if sizes:
                                         sizes[n_labels] += 1
-                                    qz.push(z1)
-                                    qy.push(y1)
-                                    qx.push(x1)
+                                    qz.push(z2)
+                                    qy.push(y2)
+                                    qx.push(x2)
+                                else:
+                                    assert labels[z2,y2,x2] == n_labels
 
     logging.debug("connected_components:(.., T_h=%s, ..): %d new labels found"
         % (T_h, n_labels - n_labels_0))
@@ -135,7 +142,7 @@ def watershed(
     cdef unsigned int zsize = aff.shape[0]
     cdef unsigned int ysize = aff.shape[1]
     cdef unsigned int xsize = aff.shape[2]
-    cdef unsigned int z, y, x, z1, y1, x1, i
+    cdef unsigned int z, y, x, z1, y1, x1, z2, y2, x2, i
     cdef LABELS_DTYPE_t label
 
     cdef queue[unsigned int] qz, qy, qx
@@ -150,46 +157,52 @@ def watershed(
                     qx.push(x)
                     explored = set([(z,y,x)])
                     label = 0
+                    # Follow stream until finding (1) a inf-stream under this stream,
+                    # or (2) that this stream is an inf-stream.  If (1), then use
+                    # that existing label.  If (2), which happens when q becomes
+                    # empty, then create a new label.
                     while not qz.empty():
-                        z = qz.front()
-                        y = qy.front()
-                        x = qx.front()
+                        z1 = qz.front()
+                        y1 = qy.front()
+                        x1 = qx.front()
                         qz.pop()
                         qy.pop()
                         qx.pop()
+                        # Explore the neighbor of steepest descent.
                         for i in xrange(6):
-                            if aff[z,y,x,i] >= T_l and aff[z,y,x,i] == affv[z,y,x]:
-                                # Check if unlabeled
-                                z1 = <unsigned int>(z + AFF_INDEX_MAP_c[i][0])
-                                y1 = <unsigned int>(y + AFF_INDEX_MAP_c[i][1])
-                                x1 = <unsigned int>(x + AFF_INDEX_MAP_c[i][2])
-                                if (z1,y1,x1) in explored:
+                            if aff[z1,y1,x1,i] >= T_l and aff[z1,y1,x1,i] == affv[z1,y1,x1]:
+                                # Note: Guaranteed not out-of-bounds thanks to T_l.
+                                z2 = <unsigned int>(z1 + AFF_INDEX_MAP_c[i][0])
+                                y2 = <unsigned int>(y1 + AFF_INDEX_MAP_c[i][1])
+                                x2 = <unsigned int>(x1 + AFF_INDEX_MAP_c[i][2])
+                                if (z2,y2,x2) in explored:
                                     continue
-                                if labels[z1,y1,x1]:
-                                    # Found inf-stream under this stream, so 
-                                    label = labels[z1,y1,x1]
+                                if labels[z2,y2,x2]:
+                                    # (1) Found inf-stream under this stream
+                                    label = labels[z2,y2,x2]
+                                    # Empty out 'q' so the while loop also ends
                                     while not qz.empty():
                                         qz.pop()
                                         qy.pop()
                                         qx.pop()
                                     break
-                                explored.add((z1,y1,x1))
-                                if affv[z1,y1,x1] > affv[z,y,x]:
+                                explored.add((z2,y2,x2))
+                                if affv[z2,y2,x2] > affv[z1,y1,x1]:
                                     # Found new bottom for this stream, so replace q
                                     # TODO: explore if taking max of all matches here affects result?
                                     while not qz.empty():
                                         qz.pop()
                                         qy.pop()
                                         qx.pop()
-                                    qz.push(z1)
-                                    qy.push(y1)
-                                    qx.push(x1)
+                                    qz.push(z2)
+                                    qy.push(y2)
+                                    qx.push(x2)
                                     break
-                                # Otherwise, affv[z1,y1,x1] == affv[z,y,x], so we found an
+                                # Otherwise, affv[z2,y2,x2] == affv[z1,y1,x1], so we found an
                                 # equivalent possible bottom for this stream, so augment q
-                                qz.push(z1)
-                                qy.push(y1)
-                                qx.push(x1)
+                                qz.push(z2)
+                                qy.push(y2)
+                                qx.push(x2)
                     if not label:
                         n_labels += 1
                         label = n_labels
@@ -250,7 +263,7 @@ def get_region_graph(
                                     s1 = s0
                                     s0 = s2
                                 ind = <unsigned int>((s0-2)*(s0-1)//2+s1-1)
-                                aff_segments[ind] = max(aff_segments[ind], f)
+                                aff_segments[ind] = aff_max(aff_segments[ind], f)
 
     # Create the sorted (descending) list of edge weights
     #TODO: optimize region_graph
@@ -266,6 +279,8 @@ def get_region_graph(
 
 
 @timeit
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def merge_segments(
         object region_graph,
         LABELS_DTYPE_t[:,:,:] labels,
@@ -318,10 +333,86 @@ def merge_segments(
     for z in xrange(zsize):
         for y in xrange(ysize):
             for x in xrange(xsize):
-                labels[z,y,x] = label_map[uf.find(labels[z,y,x])]
+                if labels[z,y,x]:
+                    labels[z,y,x] = label_map[uf.find(labels[z,y,x])]
 
     # TODO: update region_graph (return?)
 
     logging.debug("merge_segments(.., T_e=%s, T_s=%s, ..): %d merges made"
         % (T_e, T_s, n_labels_0 - n_labels))
     return n_labels
+
+
+@timeit
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def test_undersegmentation(
+        LABELS_DTYPE_t[:,:,:] labels,
+        LABELS_DTYPE_t[:,:,:] truth,
+        LABELS_DTYPE_t n_labels = 0,
+        LABELS_DTYPE_t n_truth = 0):
+
+    if not n_labels:
+        n_labels = np.max(labels)
+    if not n_truth:
+        n_truth = np.max(truth)
+
+    cdef unsigned int zsize = labels.shape[0]
+    cdef unsigned int ysize = labels.shape[1]
+    cdef unsigned int xsize = labels.shape[2]
+    # Sanity check
+    cdef unsigned int zsize1 = truth.shape[0]
+    cdef unsigned int ysize1 = truth.shape[1]
+    cdef unsigned int xsize1 = truth.shape[2]
+    assert zsize1 >= zsize
+    assert ysize1 >= ysize
+    assert xsize1 >= xsize
+
+    cdef unsigned int z, y, x, z1, y1, x1, i, j, sz
+    cdef LABELS_DTYPE_t s0
+
+    cdef queue[unsigned int] qz, qy, qx
+    cdef unsigned int mismatches = 0, tot_sz = 0
+    explored_labels = set()
+
+    for z in xrange(zsize):
+        for y in xrange(ysize):
+            for x in xrange(xsize):
+                s0 = labels[z,y,x]
+                if s0:
+                    if s0 in explored_labels:
+                        continue
+                    qz.push(z)
+                    qy.push(y)
+                    qx.push(x)
+                    explored = set([(z,y,x)])
+                    while not qz.empty():
+                        z = qz.front()
+                        y = qy.front()
+                        x = qx.front()
+                        qz.pop()
+                        qy.pop()
+                        qx.pop()
+                        for i in xrange(6):
+                            # Check if unlabeled
+                            z1 = <unsigned int>(z + AFF_INDEX_MAP_c[i][0])
+                            y1 = <unsigned int>(y + AFF_INDEX_MAP_c[i][1])
+                            x1 = <unsigned int>(x + AFF_INDEX_MAP_c[i][2])
+                            if (z1,y1,x1) in explored:
+                                continue
+                            if labels[z1,y1,x1] == s0:
+                                explored.add((z1,y1,x1))
+                                qz.push(z1)
+                                qy.push(y1)
+                                qx.push(x1)
+                    explored_labels = list(explored_labels)
+                    sz = len(explored_labels)
+                    tot_sz += <unsigned int>((sz-1)*(sz-2) / 2)
+                    for i in xrange(sz):
+                        for j in xrange(i, sz):
+                            z,y,x = explored_labels[i]
+                            z1,y1,x1 = explored_labels[j]
+                            if truth[z,y,x] != truth[z1,y1,x1]:
+                                mismatches += 1
+    cdef result = mismatches / <float>tot_sz
+    return result

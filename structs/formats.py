@@ -15,10 +15,11 @@ labels:
     * values = [1, 2, ..]
 """
 import logging
+from jpyutils.timeit import timeit
 import numpy as np
 import os
 import tifffile
-from dtypes import BM_DTYPE, AFF_DTYPE, LABELS_DTYPE, AFF_MAX, AFF_INDEX_MAP
+from structs.dtypes import BM_DTYPE, AFF_DTYPE, LABELS_DTYPE, AFF_MAX, AFF_INDEX_MAP
 
 
 ##########
@@ -46,6 +47,7 @@ def save_bm(fn, bm_3d):
 ##########
 #TODO: use size 3, instead of size 6, in last dimension
 
+@timeit
 def read_aff(fn):
     logging.info("Reading aff: '%s'" % fn)
     with open(fn, 'rb') as f:
@@ -57,8 +59,30 @@ def read_aff(fn):
     refresh_aff(aff_3d)
     return aff_3d
 
+def read_aff_float(fn):
+    logging.info("Reading aff (float): '%s'" % fn)
+    with open(fn, 'rb') as f:
+        zsize, ysize, xsize, _ = np.fromfile(f, dtype=np.uint16, count=4)
+        aff_3d_f = np.fromfile(f, dtype=AFF_DTYPE)
+    aff_3d_f = aff_3d_f.reshape((zsize, ysize, xsize, 3))
+    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=AFF_DTYPE)
+    aff_3d[:, :, :, 0:3] = aff_3d_f
+    refresh_aff(aff_3d)
+    return aff_3d
+
 def save_aff(fn, aff_3d):
     logging.info("Writing aff: '%s'" % fn)
+    if os.path.exists(fn):
+        raise IOError("File already exists, will not overwrite: %s" % fn)
+    aff_3d_f = aff_3d[:, :, :, :3]
+    aff_3d_f = AFF_DTYPE(aff_3d_f)
+    with open(fn, 'wb') as f:
+        shape = np.uint16(aff_3d_f.shape)
+        shape.tofile(f)
+        aff_3d_f.tofile(f)
+
+def save_aff_float(fn):
+    logging.info("Writing aff (float): '%s'" % fn)
     if os.path.exists(fn):
         raise IOError("File already exists, will not overwrite: %s" % fn)
     aff_3d_f = aff_3d[:, :, :, :3]
