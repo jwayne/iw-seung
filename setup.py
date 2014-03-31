@@ -18,6 +18,7 @@ if USE_CYTHON:
 else:
     extensions = [
         Extension("oversegmenters.watershed_util", ["oversegmenters/watershed_util.cpp"]),
+        Extension("structs.dtypes", ["structs/dtypes.cpp"]),
     ]
 
 

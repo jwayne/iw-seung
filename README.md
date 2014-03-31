@@ -26,16 +26,16 @@ Compile the Cython extensions.  (Note that Cython is not needed The following co
 
 Run oversegment.py.
 ```
-# Run `watershed_mod` algorithm on a given boundary map, like that downloadable from SNEMI3D
-./oversegment.py watershed_mod -i boundary_map.tif -o labels.tif
+# Run `watershed_it` algorithm on a given boundary map, like that downloadable from SNEMI3D
+./oversegment.py watershed_it -i boundary_map.tif -o labels.tif
 
-# Run `watershed_mod` algorithm on a given affinity graph, obtainable via scripts/bm2aff.py
-./oversegment.py watershed_mod -i affinity_graph.raw -o labels.tif
+# Run `watershed_it` algorithm on a given affinity graph, obtainable via scripts/bm2aff.py
+./oversegment.py watershed_it -i affinity_graph.raw -o labels.tif
 
-# Run `watershed_mod` algorithm on a given affinity graph, like that used in aleks-watershed.
+# Run `watershed_it` algorithm on a given affinity graph, like that used in aleks-watershed.
 # There are some finicky restrictions on the filename here, though (filename must match exactly
 # with aleks's benchmark affinity graph)
-./oversegment.py watershed_mod -i affinity_graph.raw -o labels.tif
+./oversegment.py watershed_it -i affinity_graph.raw -o labels.tif
 
 # Help
 ./oversegment.py --help

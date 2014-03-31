@@ -1,11 +1,15 @@
 # cython: profile = True
 # distutils: language = c++
 """
-Implements:
+Implements components of:
 
 Cousty et al. 2009 - Watershed Cuts: Minimum Spanning Forests and the Drop of
 Water Principle
 http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4564470
+
+Zletaski 2011 - A design and implementation of an efficient, parallel watershed
+algorithm for affinity graphs
+http://dspace.mit.edu/handle/1721.1/66820
 """
 from jpyutils.structs.unionfind import UnionFind
 from jpyutils.timeit import timeit
@@ -297,10 +301,15 @@ def get_region_graph(
     return region_graph
 
 
+#TODO: can't get overloading to work
 # (7f)**4
-cdef inline unsigned int func_avg(WEIGHT_DTYPE_t f): return 25 if f < 0.5 else <unsigned int>(2041*f*f*f*f)
+#cdef inline unsigned int func_avg(WEIGHT_DTYPE_FLOAT_t f): return 25 if f < 0.5 else <unsigned int>(2041*f*f*f*f)
+#cdef inline unsigned int func_avg(WEIGHT_DTYPE_UINT_t f): return 25 if f < 128 else <unsigned int>(4.8270554e-7*f*f*f*f)
+cdef inline unsigned int func_avg(WEIGHT_DTYPE_t f): return 25 if f < 128 else <unsigned int>(4.8270554e-7*f*f*f*f)
 # (4f)**5
-cdef inline unsigned int func_bup(WEIGHT_DTYPE_t f): return 25 if f < 0.5 else <unsigned int>(1024*f*f*f*f*f)
+#cdef inline unsigned int func_bup(WEIGHT_DTYPE_FLOAT_t f): return 25 if f < 0.5 else <unsigned int>(1024*f*f*f*f*f)
+#cdef inline unsigned int func_bup(WEIGHT_DTYPE_UINT_t f): return 25 if f < 128 else <unsigned int>(9.4972759e-10*f*f*f*f*f)
+cdef inline unsigned int func_bup(WEIGHT_DTYPE_t f): return 25 if f < 128 else <unsigned int>(9.4972759e-10*f*f*f*f*f)
 
 
 @timeit
@@ -365,14 +374,14 @@ def merge_segments(
                 sizes[s2_root] = sizes[s0_root] + sizes[s1_root]
                 n_labels -= 1
 
+    cdef list roots = uf.get_roots()
     # Sanity check that n_labels has been decremented properly
-    if n_labels != len(uf):
+    if n_labels != len(roots):
         logging.error("n_labels = %d, len(uf) = %d", n_labels, len(uf))
 
     # Map the label roots of each pixel to (1..n_labels), discarding all
     # segments of size < T_s.
     #TODO: optimize roots, roots2labels with C++ data structures?
-    cdef list roots = uf.get_roots()
     cdef dict roots2labels = {}
     for root in roots:
         if sizes[root] < T_s:
@@ -391,78 +400,3 @@ def merge_segments(
     logging.debug("merge_segments(.., T_s=%s, ..): %d merges made, %d segments discarded"
         % (T_s, n_labels_0 - n_labels, n_labels - n_labels_new))
     return n_labels_new
-
-
-@timeit
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def test_undersegmentation(
-        LABELS_DTYPE_t[:,:,:] labels,
-        LABELS_DTYPE_t[:,:,:] truth,
-        LABELS_DTYPE_t n_labels = 0,
-        LABELS_DTYPE_t n_truth = 0):
-
-    if not n_labels:
-        n_labels = np.max(labels)
-    if not n_truth:
-        n_truth = np.max(truth)
-
-    cdef unsigned int zsize = labels.shape[0]
-    cdef unsigned int ysize = labels.shape[1]
-    cdef unsigned int xsize = labels.shape[2]
-    # Sanity check
-    cdef unsigned int zsize1 = truth.shape[0]
-    cdef unsigned int ysize1 = truth.shape[1]
-    cdef unsigned int xsize1 = truth.shape[2]
-    assert zsize1 >= zsize
-    assert ysize1 >= ysize
-    assert xsize1 >= xsize
-
-    cdef unsigned int z, y, x, z1, y1, x1, i, j, sz
-    cdef LABELS_DTYPE_t s0
-
-    cdef queue[unsigned int] qz, qy, qx
-    cdef unsigned int mismatches = 0, tot_sz = 0
-    explored_labels = set()
-
-    for z in xrange(zsize):
-        for y in xrange(ysize):
-            for x in xrange(xsize):
-                s0 = labels[z,y,x]
-                if s0:
-                    if s0 in explored_labels:
-                        continue
-                    qz.push(z)
-                    qy.push(y)
-                    qx.push(x)
-                    explored = set([(z,y,x)])
-                    while not qz.empty():
-                        z = qz.front()
-                        y = qy.front()
-                        x = qx.front()
-                        qz.pop()
-                        qy.pop()
-                        qx.pop()
-                        for i in xrange(6):
-                            # Check if unlabeled
-                            z1 = <unsigned int>(z + AFF_INDEX_MAP_c[i][0])
-                            y1 = <unsigned int>(y + AFF_INDEX_MAP_c[i][1])
-                            x1 = <unsigned int>(x + AFF_INDEX_MAP_c[i][2])
-                            if (z1,y1,x1) in explored:
-                                continue
-                            if labels[z1,y1,x1] == s0:
-                                explored.add((z1,y1,x1))
-                                qz.push(z1)
-                                qy.push(y1)
-                                qx.push(x1)
-                    explored_labels = list(explored_labels)
-                    sz = len(explored_labels)
-                    tot_sz += <unsigned int>((sz-1)*(sz-2) / 2)
-                    for i in xrange(sz):
-                        for j in xrange(i, sz):
-                            z,y,x = explored_labels[i]
-                            z1,y1,x1 = explored_labels[j]
-                            if truth[z,y,x] != truth[z1,y1,x1]:
-                                mismatches += 1
-    cdef result = mismatches / <float>tot_sz
-    return result

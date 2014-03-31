@@ -6,6 +6,8 @@ cimport numpy as np
 
 WEIGHT_DTYPE_UINT = np.uint8
 WEIGHT_DTYPE_FLOAT = np.float32
+ctypedef np.uint8_t WEIGHT_DTYPE_UINT_t
+ctypedef np.float32_t WEIGHT_DTYPE_FLOAT_t
 ctypedef fused WEIGHT_DTYPE_t:
     np.uint8_t
     np.float32_t

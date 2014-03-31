@@ -83,7 +83,7 @@ def read_aff(fn):
     else:
         raise ValueError("Bad extension, not .aff or .raw: %s" % fn)
 
-    logging.info("Reading aff (%s): '%s'" % (dtype.__name__, fn))
+    logging.info("Reading aff (%s): '%s'" % (dtype, fn))
     with open(fn, 'rb') as f:
         if dtype == WEIGHT_DTYPE_UINT:
             zsize, ysize, xsize, _ = np.fromfile(f, dtype=np.uint16, count=4)
@@ -120,7 +120,7 @@ def save_aff(fn, aff_3d):
         raise TypeError("Bad dtype '%s': Must be '%s', '%s'" %
             (dtype, WEIGHT_DTYPE_UINT, WEIGHT_DTYPE_FLOAT))
 
-    logging.info("Writing aff (%s): '%s'" % (dtype.__name__, fn))
+    logging.info("Writing aff (%s): '%s'" % (dtype, fn))
     if os.path.exists(fn):
         raise IOError("File already exists, will not overwrite: %s" % fn)
     aff_3d_f = aff_3d[:, :, :, :3]
@@ -232,8 +232,9 @@ def read_labels(fn):
     logging.info("Reading labels: '%s'" % fn)
     labels_3d = tifffile.imread(fn)
     if labels_3d.dtype != LABELS_DTYPE:
-        raise TypeError("Bad dtype '%s': Must be '%s'" %
+        logging.warning("Read dtype '%s', coercing to dtype '%s'" %
             (labels_3d.dtype, LABELS_DTYPE))
+        labels_3d = LABELS_DTYPE(labels_3d)
     return labels_3d
 
 def save_labels(fn, labels_3d):
