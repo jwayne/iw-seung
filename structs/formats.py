@@ -70,11 +70,11 @@ def save_bm(fn, bm_3d):
 #TODO: use size 3, instead of size 6, in last dimension.  I'm wasting memory..
 
 @timeit
-def read_aff(fn, zsize=160, ysize=160, xsize=160):
+def read_aff(fn):
     """
     Read edge affinities from a raw binary file, saved in [z][y][x][dim] order.
-    Type is inferred from fn extension.  If .raw, then sizes are assumed to be
-    aleks's benchmark dataset.
+    Type is inferred from `fn`s extension.  If .raw, then sizes are assumed to be
+    aleks's benchmark dataset.  (If .aff, then sizes are saved in the file.)
     """
     if fn.endswith('.aff'):
         dtype = WEIGHT_DTYPE_UINT
@@ -84,17 +84,19 @@ def read_aff(fn, zsize=160, ysize=160, xsize=160):
         raise ValueError("Bad extension, not .aff or .raw: %s" % fn)
 
     logging.info("Reading aff (%s): '%s'" % (dtype.__name__, fn))
-    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=dtype)
     with open(fn, 'rb') as f:
         if dtype == WEIGHT_DTYPE_UINT:
             zsize, ysize, xsize, _ = np.fromfile(f, dtype=np.uint16, count=4)
             aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=dtype)
             aff_3d[:, :, :, :3] = np.fromfile(f, dtype=dtype).reshape((zsize, ysize, xsize, 3))
         elif dtype == WEIGHT_DTYPE_FLOAT:
-            per_slice = zsize * ysize * xsize
+            import re
+            sz = int(re.match('ws_test_(\d+).raw', os.path.split(fn)[-1]).groups()[0])
+            aff_3d = np.zeros((sz, sz, sz, 6), dtype=dtype)
+            per_slice = sz ** 3
             for i in xrange(3):
                 aff_3d[:, :, :, i] = np.fromfile(
-                    f, dtype=dtype, count=per_slice).reshape((zsize, ysize, xsize))
+                    f, dtype=dtype, count=per_slice).reshape((sz, sz, sz))
         else:
             assert False
     refresh_aff(aff_3d)
@@ -104,8 +106,8 @@ def read_aff(fn, zsize=160, ysize=160, xsize=160):
 def save_aff(fn, aff_3d):
     """
     Save edge affinities to a raw binary file, saved in [z][y][x][dim] order.
-    Type is inferred from `aff_3d` and checked against a list of accepted types
-    and the given fn extension.
+    Type is inferred from `fn`s extension, and is checked against `aff_3d`s
+    dtype and a list of accepted types.
     """
     dtype = aff_3d.dtype
     if dtype == WEIGHT_DTYPE_UINT:

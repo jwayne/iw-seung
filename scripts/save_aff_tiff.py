@@ -9,8 +9,7 @@ from structs import formats
 logging_setup('debug')
 
 
-dim = sys.argv[1]
-out_fn = sys.argv[2]
+dim, out_fn = sys.argv[1:3] 
 if len(sys.argv) > 3:
     in_fn = sys.argv[3]
 else:

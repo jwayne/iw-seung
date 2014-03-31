@@ -10,8 +10,7 @@ logging_setup('debug')
 
 
 if len(sys.argv) > 1:
-    in_fn = sys.argv[1]
-    out_fn = sys.argv[2]
+    in_fn, out_fn = sys.argv[1:3]
 else:
     in_fn = config.fn_bm
     out_fn = config.fn_aff
