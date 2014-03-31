@@ -17,7 +17,7 @@ from jpyutils.timeit import timeit
 from structs import formats
 include "structs/dtypes.pyx"
 
-cdef inline AFF_DTYPE_t aff_max(AFF_DTYPE_t a, AFF_DTYPE_t b): return a if a >= b else b
+cdef inline WEIGHT_DTYPE_t aff_max(WEIGHT_DTYPE_t a, WEIGHT_DTYPE_t b): return a if a >= b else b
 
 
 #TODO: danger that n_labels overflows
@@ -29,9 +29,9 @@ cdef inline AFF_DTYPE_t aff_max(AFF_DTYPE_t a, AFF_DTYPE_t b): return a if a >= 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def connected_components(
-        AFF_DTYPE_t[:,:,:,:] aff,
-        AFF_DTYPE_t[:,:,:] affv,
-        AFF_DTYPE_t T_h,
+        WEIGHT_DTYPE_t[:,:,:,:] aff,
+        WEIGHT_DTYPE_t[:,:,:] affv,
+        WEIGHT_DTYPE_t T_h,
         LABELS_DTYPE_t[:,:,:] labels,
         LABELS_DTYPE_t n_labels = 0,
         object sizes = None):
@@ -111,9 +111,9 @@ def connected_components(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def watershed(
-        AFF_DTYPE_t[:,:,:,:] aff,
-        AFF_DTYPE_t[:,:,:] affv,
-        AFF_DTYPE_t T_l,
+        WEIGHT_DTYPE_t[:,:,:,:] aff,
+        WEIGHT_DTYPE_t[:,:,:] affv,
+        WEIGHT_DTYPE_t T_l,
         LABELS_DTYPE_t[:,:,:] labels,
         LABELS_DTYPE_t n_labels = 0,
         object sizes = None):
@@ -219,7 +219,7 @@ def watershed(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def get_region_graph(
-        AFF_DTYPE_t[:,:,:,:] aff,
+        WEIGHT_DTYPE_t[:,:,:,:] aff,
         LABELS_DTYPE_t[:,:,:] labels,
         LABELS_DTYPE_t n_labels):
     """
@@ -234,13 +234,13 @@ def get_region_graph(
     cdef unsigned int ysize = aff.shape[1]
     cdef unsigned int xsize = aff.shape[2]
     cdef unsigned int z, y, x, z1, y1, x1, i, ind
-    cdef AFF_DTYPE_t f
+    cdef WEIGHT_DTYPE_t f
     cdef LABELS_DTYPE_t s0, s1, s2
 
     # compact format of the adjacency graph, where the weight between segments
     # s0,s1 is region_graph[(s0-2)*(s0-1)/2 + (s1-1)]
     cdef unsigned int N = <unsigned int>((n_labels-2)*(n_labels+1)//2)
-    cdef AFF_DTYPE_t[::1] aff_segments = np.zeros(N, dtype=AFF_DTYPE)
+    cdef WEIGHT_DTYPE_t[::1] aff_segments = np.zeros(N, dtype=aff.dtype)
 
     # Compute the max edge weight straddling each pair of segments.
     for z in xrange(zsize):
@@ -285,7 +285,7 @@ def merge_segments(
         object region_graph,
         LABELS_DTYPE_t[:,:,:] labels,
         LABELS_DTYPE_t n_labels,
-        AFF_DTYPE_t T_e,
+        WEIGHT_DTYPE_t T_e,
         unsigned int T_s,
         object sizes):
     """
@@ -300,7 +300,7 @@ def merge_segments(
     cdef unsigned int ysize = labels.shape[1]
     cdef unsigned int xsize = labels.shape[2]
     cdef unsigned int z, y, x
-    cdef AFF_DTYPE_t f
+    cdef WEIGHT_DTYPE_t f
     cdef LABELS_DTYPE_t s0, s1, s0_root, s1_root, s2_root
 
     #TODO: optimize uf

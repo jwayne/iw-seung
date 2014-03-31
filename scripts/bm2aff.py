@@ -1,3 +1,6 @@
+"""
+Convert bm to aff.
+"""
 from jpyutils.jlogging import logging_setup
 import sys
 import config

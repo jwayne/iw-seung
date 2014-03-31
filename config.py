@@ -9,7 +9,7 @@ import os
 dn_data = "../data/"
 fn_bm = "train-membranes-idsia.tif"
 #fn_aff = "toy_aff.raw"
-fn_aff = "train-membranes-idsia.raw"
+fn_aff = "train-membranes-idsia.aff"
 fn_truth = "train-labels.tif"
 
 dn_data = os.path.abspath(dn_data)

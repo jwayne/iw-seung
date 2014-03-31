@@ -10,9 +10,8 @@ parallel watershed algorithm for affinity graphs (master's thesis)
 http://dspace.mit.edu/handle/1721.1/66820
 """
 from collections import defaultdict
-import numpy as np
 from jpyutils.timeit import timeit
-
+import numpy as np
 from structs import formats
 from oversegmenters.watershed_util import connected_components, watershed, get_region_graph, merge_segments
 
@@ -22,26 +21,30 @@ from oversegmenters.watershed_util import connected_components, watershed, get_r
 
 @timeit
 def oversegment_aff(aff_3d):
-    zsize, ysize, xsize, nedges = aff_3d.shape
-    assert nedges == 6
-
-    # Thresholds from p. 19
-#    T_h = 0.98
-    T_h = 0.6
+    # Thresholds from Zletaski 2009, p. 19
+    """
+    T_h = 0.98
     T_l = 0.2
     T_e = 0.1
     T_s = 25
+    """
+
+    # Thresholds from Aleks's code.
+    T_h = 0.99
+    T_l = 0.3
+    T_e = 0.1
+
+    if aff_3d.dtype == formats.WEIGHT_DTYPE_UINT:
+        T_h = int(T_h * formats.WEIGHT_MAX_UINT)
+        T_l = int(T_l * formats.WEIGHT_MAX_UINT)
+        T_e = int(T_e * formats.WEIGHT_MAX_UINT)
 
     # Set each vertex's weight to the max of its adjacent edges
     affv_3d = formats.aff2affv(aff_3d)
 
     labels_3d = np.zeros(aff_3d.shape[:-1], dtype=formats.LABELS_DTYPE)
-    n_labels = 0
+    n_labels = formats.LABELS_DTYPE(0)
     sizes = defaultdict(int)
-
-    T_h *= formats.AFF_MAX
-    T_l *= formats.AFF_MAX
-    T_e *= formats.AFF_MAX
 
     # Watershed with edges >= T_h merged, and edges < T_l not considered
     n_labels = connected_components(aff_3d, affv_3d, T_h, labels_3d, n_labels, sizes)
@@ -53,10 +56,10 @@ def oversegment_aff(aff_3d):
     # Create the region graph, and list their edges in decreasing order
     # Ignore unlabeled vertices, since they are "single-vertex segments" and
     # I think they'll be unlikely to reach size > T_s even after the next step.
-    region_graph = get_region_graph(aff_3d, labels_3d, n_labels)
+#    region_graph = get_region_graph(aff_3d, labels_3d, n_labels)
     
     # For all edges with affinity >= T_e, merge if any segment has size < T_s.
     # NOTE: T_s increases with affinity in the new version of MW
-    n_labels = merge_segments(region_graph, labels_3d, n_labels, T_e, T_s, sizes)
+#    n_labels = merge_segments(region_graph, labels_3d, n_labels, T_e, T_s, sizes)
     
-    return labels_3d
+    return labels_3d, n_labels

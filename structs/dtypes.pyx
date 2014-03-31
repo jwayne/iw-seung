@@ -1,16 +1,19 @@
+# cython: profile = False
+# distutils: language = c++
 import numpy as np
 cimport numpy as np
 
-BM_DTYPE = np.uint8
-ctypedef np.uint8_t BM_DTYPE_t
 
-AFF_DTYPE = np.uint8
-ctypedef np.uint8_t AFF_DTYPE_t
-# not used in any cython stuff so leaving it as a python object is ok
-AFF_MAX = 255
+WEIGHT_DTYPE_UINT = np.uint8
+WEIGHT_DTYPE_FLOAT = np.float32
+ctypedef fused WEIGHT_DTYPE_t:
+    np.uint8_t
+    np.float32_t
+WEIGHT_MAX_UINT = 255
 
-LABELS_DTYPE = np.uint16
-ctypedef np.uint16_t LABELS_DTYPE_t
+LABELS_DTYPE = np.uint32
+ctypedef np.uint32_t LABELS_DTYPE_t
+
 
 AFF_INDEX_MAP = np.array((
     (1,0,0),

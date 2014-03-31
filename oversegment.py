@@ -22,7 +22,7 @@ def plot_arr(arr, cmap):
 
 
 
-def oversegment(oversegmenter, to_plot=False, lim=0, infile=None):
+def oversegment(oversegmenter, lim=0, infile=None):
     module = importer.get_module('oversegmenters', oversegmenter)
 
     if hasattr(module, 'oversegment_bm'):
@@ -34,6 +34,7 @@ def oversegment(oversegmenter, to_plot=False, lim=0, infile=None):
         if lim:
             bm_3d = bm_3d[:lim]
         labels_3d, n_labels = module.oversegment_bm(bm_3d)
+
     elif hasattr(module, 'oversegment_aff'):
         if infile:
             fn = infile
@@ -44,21 +45,13 @@ def oversegment(oversegmenter, to_plot=False, lim=0, infile=None):
             aff_3d = aff_3d[:lim]
             # Need edges going out-of-bounds to be 0, to prevent the exploring
             # of out-of-bounds vertices
-            aff_3d[-1, :, :, 0] = 0
-            aff_3d[:, -1, :, 1] = 0
-            aff_3d[:, :, -1, 2] = 0
-            aff_3d[0, :, :, 3] = 0
-            aff_3d[:, 0, :, 4] = 0
-            aff_3d[:, :, 0, 5] = 0
+        formats.clean_aff(aff_3d)
         labels_3d, n_labels = module.oversegment_aff(aff_3d)
+
     else:
         raise ImportError("Bad module: '%s'" % module.__name__)
-    # Standardize..
-    labels_3d = np.uint16( labels_3d ) 
 
-    if to_plot:
-        for labels_2d in labels_3d:
-            plot_oversegmented(labels_2d)
+    logging.info("Found %d labels" % n_labels)
 
     # Write labels to disk
     fn = io.get_filename(config.dn_data, "oversegment-%s" % oversegmenter, "tif")
@@ -72,11 +65,9 @@ def main():
         help="image file to segment, if not supplied then file in config.py will be used")
     parser.add_argument('--lim', type=int, default=0,
         help="max slices to oversegment")
-    parser.add_argument('--plot', action='store_true',
-        help="plot oversegmented labels for each slice")
     args = parser.parse_args()
 
-    oversegment(args.oversegmenter, args.plot, args.lim, args.infile)
+    oversegment(args.oversegmenter, args.lim, args.infile)
 
 
 if __name__ == "__main__":

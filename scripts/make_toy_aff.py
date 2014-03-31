@@ -1,4 +1,6 @@
-# figure 4 in cousty 2009
+"""
+Create a toy affinity graph based on Cousty 2009, Figure 4.
+"""
 import numpy as np
 import sys
 from structs import formats
