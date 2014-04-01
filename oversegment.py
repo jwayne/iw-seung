@@ -1,3 +1,12 @@
+"""
+Run a selected oversegmenter algorithm defined as a module in
+`oversegmenters/`, on a 3D boundary map or a 3D affinity graph.
+
+For a module defined in `oversegmenters/alg.py`, if
+`alg.oversegment_bm` exists then a boundary map is expected as
+input.  On the other hand, if `alg.oversegment_aff` exists then
+an affinity graph is expected as input.
+"""
 #!/usr/bin/env python
 from __future__ import division
 from jpyutils import importer, io, jargparse
@@ -25,8 +34,12 @@ def plot_arr(arr, cmap):
 
 def oversegment(oversegmenter, lim=0, infile=None, outfile=None):
     module = importer.get_module('oversegmenters', oversegmenter)
+    use_bm = hasattr(module, 'oversegment_bm')
+    use_aff = hasattr(module, 'oversegment_aff')
+    if use_bm and use_aff:
+        raise ImportError("Bad module: '%s'" % module.__name__)
 
-    if hasattr(module, 'oversegment_bm'):
+    if use_bm:
         if not infile:
             infile = config.fn_bm
         bm_3d = formats.read_bm(infile)
@@ -34,7 +47,7 @@ def oversegment(oversegmenter, lim=0, infile=None, outfile=None):
             bm_3d = bm_3d[:lim]
         labels_3d, n_labels = module.oversegment_bm(bm_3d)
 
-    elif hasattr(module, 'oversegment_aff'):
+    elif use_aff:
         if not infile:
             infile = config.fn_aff
         aff_3d = formats.read_aff(infile)

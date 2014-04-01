@@ -40,4 +40,8 @@ Run oversegment.py.
 # Help
 ./oversegment.py --help
 ```
+Algorithms can be easily defined in `oversegmenters/`, and are run as an argument to `oversegment.py` by inputting their filename without the `.py` extension as the first argument.  The algorithm in `oversegmenters/watershed_it.py` is used in the above examples.
+
+Accepted data formats are 
+
 Other useful scripts can be found in `scripts/`.

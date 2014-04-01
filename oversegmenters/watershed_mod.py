@@ -57,9 +57,9 @@ def oversegment_aff(aff_3d):
     # Create the region graph, and list their edges in decreasing order
     # Ignore unlabeled vertices, since they are "single-vertex segments" and
     # I think they'll be unlikely to reach size > T_s even after the next step.
-    region_graph = get_region_graph(aff_3d, labels_3d, n_labels)
+#    region_graph = get_region_graph(aff_3d, labels_3d, n_labels)
 
     # For all edges with affinity >= T_e, merge if any segment has size < T_s.
-    n_labels = merge_segments(aff_3d, region_graph, labels_3d, n_labels, sizes, T_s)
+#    n_labels = merge_segments(aff_3d, region_graph, labels_3d, n_labels, sizes, T_s)
 
     return labels_3d, n_labels

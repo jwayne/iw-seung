@@ -10,10 +10,10 @@ logging_setup('debug')
 
 
 if len(sys.argv) > 1:
-    in_fn, out_fn = sys.argv[1:3]
+    in_fn = sys.argv[1]
 else:
     in_fn = config.fn_aff
-    out_fn = config.fn_aff[:-3] + 'raw'
+out_fn = in_fn[:-3] + 'raw'
 
 
 aff_3d = formats.read_aff(in_fn)
