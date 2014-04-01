@@ -70,7 +70,7 @@ def save_bm(fn, bm_3d):
 #TODO: use size 3, instead of size 6, in last dimension.  I'm wasting memory..
 
 @timeit
-def read_aff(fn):
+def read_aff(fn, zsize=0, ysize=0, xsize=0):
     """
     Read edge affinities from a binary file.  File format and dtype are inferred
     from `fn`s extension and checked against a list of accepted types.  In
@@ -100,13 +100,15 @@ def read_aff(fn):
             aff_3d[:, :, :, :3] = np.fromfile(f, dtype=dtype).reshape((zsize, ysize, xsize, 3))
             refresh_aff(aff_3d)
         elif ext == ".raw":
-            import re
-            sz = int(re.search('(\d+)', os.path.split(fn)[-1]).groups()[0])
-            aff_3d = np.zeros((sz, sz, sz, 6), dtype=dtype)
-            per_slice = sz ** 3
+            if not zsize:
+                import re
+                sz = int(re.search('(\d+)', os.path.split(fn)[-1]).groups()[0])
+                zsize = ysize = xsize = sz
+            aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=dtype)
+            per_slice = zsize * ysize * xsize
             for i in [5,4,3]:
                 aff_3d[:, :, :, i] = np.fromfile(
-                    f, dtype=dtype, count=per_slice).reshape((sz, sz, sz))
+                    f, dtype=dtype, count=per_slice).reshape((zsize, ysize, xsize))
             refresh_aff(aff_3d, reverse=True)
         else:
             assert False

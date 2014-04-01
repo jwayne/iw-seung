@@ -32,7 +32,6 @@ def oversegment_aff(aff_3d):
     # Thresholds from Aleks's code.
     T_h = 0.99
     T_l = 0.3
-    T_e = 0.1 #not used
     T_s = 25
 
     if aff_3d.dtype == formats.WEIGHT_DTYPE_UINT:

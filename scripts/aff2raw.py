@@ -1,21 +1,22 @@
 """
-Convert aff to raw.
+Convert edge affinities file from .aff (snemi3d) to .raw (aleks).
 """
 from jpyutils.jlogging import logging_setup
 import sys
-import config
 from structs import formats
 
 logging_setup('debug')
 
 
-if len(sys.argv) > 1:
-    in_fn = sys.argv[1]
+in_fn, out_fn = sys.argv[1:3]
+if len(sys.argv) > 3:
+    lim = int(sys.argv[3])
 else:
-    in_fn = config.fn_aff
-out_fn = in_fn[:-3] + 'raw'
+    lim = 0
 
 
 aff_3d = formats.read_aff(in_fn)
-aff_3d = formats.WEIGHT_DTYPE_FLOAT(aff_3d[:25]) / formats.WEIGHT_MAX_UINT
+if lim:
+    aff_3d = aff_3d[:lim]
+aff_3d = formats.WEIGHT_DTYPE_FLOAT(aff_3d) / formats.WEIGHT_MAX_UINT
 formats.save_aff(out_fn, aff_3d)

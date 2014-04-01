@@ -1,19 +1,14 @@
 """
-Convert bm to aff.
+Convert boundary maps (snemi3d) to .aff affinity graphs (snemi3d).
 """
 from jpyutils.jlogging import logging_setup
 import sys
-import config
 from structs import formats
 
 logging_setup('debug')
 
 
-if len(sys.argv) > 1:
-    in_fn, out_fn = sys.argv[1:3]
-else:
-    in_fn = config.fn_bm
-    out_fn = config.fn_aff
+in_fn, out_fn = sys.argv[1:3]
 
 
 bm_3d = formats.read_bm(in_fn)
