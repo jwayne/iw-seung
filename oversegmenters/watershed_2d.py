@@ -7,6 +7,7 @@ import numpy as np
 from scipy import ndimage
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
+from structs import formats
 
 
 
@@ -33,7 +34,7 @@ def _oversegment_bm_slice(bm_2d):
 
 
 def oversegment_bm(bm_3d):
-    labels_3d = np.zeros(bm_3d.shape)
+    labels_3d = np.zeros(bm_3d.shape, dtype=formats.LABELS_DTYPE)
     tot_labels = 0
     for i, bm_2d in enumerate(bm_3d):
         labels_2d, n_labels = _oversegment_bm_slice(bm_2d)

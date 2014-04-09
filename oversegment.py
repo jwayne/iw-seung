@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Run a selected oversegmenter algorithm defined as a module in
 `oversegmenters/`, on a 3D boundary map or a 3D affinity graph.
@@ -7,7 +8,6 @@ For a module defined in `oversegmenters/alg.py`, if
 input.  On the other hand, if `alg.oversegment_aff` exists then
 an affinity graph is expected as input.
 """
-#!/usr/bin/env python
 from __future__ import division
 from jpyutils import importer, io, jargparse
 import logging
@@ -72,11 +72,11 @@ def oversegment(oversegmenter, lim=0, infile=None, outfile=None):
 def main():
     parser = jargparse.ArgumentParser()
     parser.add_argument('oversegmenter')
-    parser.add_argument('-l, --limit', dest="limit", type=int, default=0,
+    parser.add_argument('-l', '--limit', dest="limit", type=int, default=0,
         help="max slices to oversegment")
-    parser.add_argument('-i, --infile', dest="infile",
+    parser.add_argument('-i', '--infile', dest="infile",
         help="image file to segment, if not supplied then file in config.py will be used")
-    parser.add_argument('-o, --outfile', dest="outfile",
+    parser.add_argument('-o', '--outfile', dest="outfile",
         help="labels file to output to, if not supplied then a default path will be used")
     args = parser.parse_args()
 

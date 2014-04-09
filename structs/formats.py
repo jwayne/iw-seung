@@ -1,14 +1,14 @@
 """
-bm: pixel membrane probabilities
+bm: boundary map of pixel membrane probabilities
     3d numpy array [z][y][x] of probability(boundary)
     * elements = 0-255, 1 byte each
-    * values = [0, 1=boundary]
-aff: edge weights
+    * values = [0=membrane, 1=interior]
+aff: affinity graph of edge weights
     3d numpy array [z][y][x][6] of edge affinities offset so that
     aff_3d[z][y][x][0,1,2,3,4,5] corresponds to the edge in the
     +z, +y, +x, -z, -y, -x directions of (z,y,x), respectively.
     * elements = 0-255, 1 byte each
-    * values = [0, 1=connected]
+    * values = [0=diff membranes or both boundaries, 1=same superpixel]
 labels: pixel labels
     3d numpy array [z][y][x] of integer labels
     * elements = unsigned int, 2 bytes each
@@ -70,7 +70,7 @@ def save_bm(fn, bm_3d):
 #TODO: use size 3, instead of size 6, in last dimension.  I'm wasting memory..
 
 @timeit
-def read_aff(fn, zsize=0, ysize=0, xsize=0):
+def read_aff(fn, zsize=10, ysize=1024, xsize=1024):
     """
     Read edge affinities from a binary file.  File format and dtype are inferred
     from `fn`s extension and checked against a list of accepted types.  In
@@ -216,20 +216,22 @@ def bm2aff(bm_3d):
     Convert a boundary map into an affinity graph.  dtype is taken from `bm_3d`
     and checked against a list of accepted types.
     """
-    dtype = aff_3d.dtype
+    dtype = bm_3d.dtype
     if dtype != WEIGHT_DTYPE_UINT and dtype != WEIGHT_DTYPE_FLOAT:
         raise TypeError("Bad dtype '%s': Must be '%s' or '%s'" %
             (dtype, WEIGHT_DTYPE_UINT, WEIGHT_DTYPE_FLOAT))
 
     zsize, ysize, xsize = bm_3d.shape
-    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=dtype)
-    # Set affinity of x->y to max(x, y).
-    aff_3d[:-1, :, :, 0] = np.max((bm_3d[1:, :, :], bm_3d[:-1, :, :]), 0)
-    aff_3d[:, :-1, :, 1] = np.max((bm_3d[:, 1:, :], bm_3d[:, :-1, :]), 0)
-    aff_3d[:, :, :-1, 2] = np.max((bm_3d[:, :, 1:], bm_3d[:, :, :-1]), 0)
-#    aff_3d[:-1, :, :, 0] = WEIGHT_MAX_UINT - np.abs(bm_3d[1:, :, :] - bm_3d[:-1, :, :])
-#    aff_3d[:, :-1, :, 1] = WEIGHT_MAX_UINT - np.abs(bm_3d[:, 1:, :] - bm_3d[:, :-1, :])
-#    aff_3d[:, :, :-1, 2] = WEIGHT_MAX_UINT - np.abs(bm_3d[:, :, 1:] - bm_3d[:, :, :-1])
+    aff_3d = np.zeros((zsize, ysize, xsize, 6), dtype=WEIGHT_DTYPE_FLOAT)
+    # Set affinity of x->y to min(x, y)
+    # This makes sense according to bm/aff definitions.
+    aff_3d[:-1, :, :, 0] = bm_3d[1:, :, :]
+    aff_3d[:, :-1, :, 1] = bm_3d[:, 1:, :]
+    aff_3d[:, :, :-1, 2] = bm_3d[:, :, 1:]
+    aff_3d[:-1, :, :, 0] *= bm_3d[:-1, :, :]
+    aff_3d[:, :-1, :, 1] *= bm_3d[:, :-1, :]
+    aff_3d[:, :, :-1, 2] *= bm_3d[:, :, :-1]
+    aff_3d /= (255*255)
     refresh_aff(aff_3d)
     return aff_3d
 
