@@ -112,6 +112,7 @@ def read_aff(fn, zsize=10, ysize=1024, xsize=1024):
             refresh_aff(aff_3d, reverse=True)
         else:
             assert False
+    clean_aff(aff_3d)
     return aff_3d
 
 
