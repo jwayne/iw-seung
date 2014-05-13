@@ -3,7 +3,7 @@ iw-seung
 
 Segment a 3D boundary map or affinity graph using various segmentation algorithms.
 
-Code accelerated via Cython, and is 1.5-2x faster than equivalent C++ code (see [https://github.com/jwayne/aleks-watershed]) with several easy optimizations still unimplemented.
+Code accelerated via Cython, and 0.25-0.5x as fast as equivalent C++ code (see [https://github.com/jwayne/aleks-watershed]) with several easy optimizations still unimplemented.
 
 My goal is to use this code to rapidly develop and test different agglomeration algorithms.
 
